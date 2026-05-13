@@ -6088,8 +6088,8 @@ Defaulting to 2020, but this will stop working in the future.`)),
 					(h.headers = this.createBareHeaders(a, l));
 				const f = await ti(this.http + "?cache=" + xs(a.toString()), h),
 					A = await this.readBareResponse(f),
-					d = new mn(hs.includes(A.status) ? void 0 : f.body, {
-						status: A.status,
+					const d = new mn(hs.includes(A.status) ? void 0 : f.body, {
+						status: (A.status >= 200 && A.status <= 599) ? A.status : 200,
 						statusText: A.statusText ?? void 0,
 						headers: new Headers(A.headers),
 					});
@@ -6097,14 +6097,18 @@ Defaulting to 2020, but this will stop working in the future.`)),
 			}
 			async readBareResponse(i) {
 				if (!i.ok) throw new ct(i.status, await i.json());
-				const r = bs(i.headers),
-					n = {},
-					a = r.get("x-bare-status");
-				a !== null && (n.status = Number.parseInt(a));
+				const r = bs(i.headers), n = {};
+				const a = r.get("x-bare-status");
+				// Guard here too
+				if (a !== null) {
+					const parsed = Number.parseInt(a);
+					n.status = (parsed >= 200 && parsed <= 599) ? parsed : 200;
+				}
 				const s = r.get("x-bare-status-text");
-				s !== null && (n.statusText = s);
+				if (s !== null) n.statusText = s;
 				const o = r.get("x-bare-headers");
-				return o !== null && (n.headers = JSON.parse(o)), n;
+				if (o !== null) n.headers = JSON.parse(o);
+				return n;
 			}
 			createBareHeaders(i, r, n = [], a = [], s = []) {
 				const o = new Headers();
